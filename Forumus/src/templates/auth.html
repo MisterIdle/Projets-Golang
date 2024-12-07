@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <!--Ajoute un favicon-->
+    <link rel="icon" type="image/png" href="/img/fix/favicon.png" />
+    <link rel="stylesheet" href="/styles/styles.css"> <!-- Link to external CSS -->
+</head>
+<body>
+    <!-- Header section with navigation links -->
+    <header class="header">
+        <div class="logo">
+            <a href="/back"><i class="fas fa-comments"></i> Prog'Here</a> <!-- Logo and home link -->
+        </div>
+    
+        {{if .Session.LoggedIn}} <!-- Check if the user is logged in -->
+            {{if eq .Session.Rank "Moderator" "Administrator"}} <!-- Check if the user is a Moderator or Administrator -->
+            <a href="/dashboard?view={{.Session.Username}}" class="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            {{end}}
+
+            <a href="/logout" class="logout" onclick="return confirm('Are you sure you want to logout?')"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="/profile?name={{.Session.Username}}" class="profile"><i class="fas fa-user"></i> Profile</a>
+        {{else}}
+            <a href="/auth/login" class="login"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="/auth/register" class="register"><i class="fas fa-user-plus"></i> Register</a>
+        {{end}}
+    </header>
+
+    <!-- Display error message if there is an error -->
+    {{if .Data.Session.HasError}}
+    <div class="overlay"></div>
+        <div class="error">
+            <form action="/reload-auth" method="post">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Oops!</h2>
+                <p>{{.Data.Session.Message}}</p>
+                <button type="submit" class="close-error">Close</button>
+            </form>
+        </div>
+    {{end}}
+
+    <!-- Authentication form container -->
+    <div class="auth-container">
+        <!-- Registration form -->
+        <form id="registerForm" action="/register" method="post" class="auth-form">
+            <h1>Signup</h1>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required maxlength="20" placeholder="Sambre">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required placeholder="exemple@gmail.fr">
+            </div>
+            <div class="form-group password-group">
+                <label for="password">Password:</label>
+                <div class="input-wrapper">
+                    <input class="password" type="password" id="registerPassword" name="password" required>
+                    <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('registerPassword', this)"></i>
+                </div>
+            </div>
+            <div class="form-group password-group">
+                <label for="confirmPassword">Confirm password:</label>
+                <div class="input-wrapper">
+                    <input class="password" type="password" id="registerConfirmPassword" name="confirmPassword" required>
+                    <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('registerConfirmPassword', this)"></i>
+                </div>
+            </div>
+            <button type="button" class="toggle-button" onclick="toggleForm('loginForm')">Already have an account?</button>
+            <button type="submit" class="login-button">Signup</button>
+        </form>
+
+        <!-- Login form -->
+        <form id="loginForm" action="/login" method="post" class="auth-form hidden">
+            <h1>Login</h1>
+            <div class="form-group">
+                <label for="user">Username or Email:</label>
+                <input type="text" id="user" name="user" required>
+            </div>
+            <div class="form-group password-group">
+                <label for="loginPassword">Password:</label>
+                <div class="input-wrapper">
+                    <input class="password" type="password" id="loginPassword" name="password" required>
+                    <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('loginPassword', this)"></i>
+                </div>
+            </div>
+            <button type="button" class="toggle-button" onclick="toggleForm('registerForm')">Don't have an account?</button>
+            <button type="submit" class="login-button">Login</button>
+        </form>
+    </div>
+
+    <!-- JavaScript for toggle functionality and password visibility -->
+    <script>
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            }
+        }
+
+        function toggleForm(formId) {
+            const registerForm = document.getElementById("registerForm");
+            const loginForm = document.getElementById("loginForm");
+
+            if (formId === "registerForm") {
+                registerForm.style.display = "block";
+                loginForm.style.display = "none";
+            } else {
+                registerForm.style.display = "none";
+                loginForm.style.display = "block";
+            }
+        }
+
+        // Toggle the appropriate form based on the URL
+        if (window.location.href.includes("login")) {
+            toggleForm("loginForm");
+        } else {
+            toggleForm("registerForm");
+        }
+    </script>
+    
+    <!-- FontAwesome kit for icons -->
+    <script src="https://kit.fontawesome.com/0bcb48834b.js" crossorigin="anonymous"></script>
+</body>
+</html>

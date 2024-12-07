@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <link rel="icon" type="image/png" href="/img/fix/favicon.png" />
+    <link rel="stylesheet" href="/styles/styles.css"> <!-- Link to external CSS -->
+</head>
+<body>
+    <!-- Header section with navigation links -->
+    <header class="header">
+        <div class="logo">
+            <a href="/back"><i class="fas fa-comments"></i> Prog'Here</a> <!-- Logo and home link -->
+        </div>
+    
+        {{if .Session.LoggedIn}} <!-- Check if the user is logged in -->
+            {{if eq .Session.Rank "Moderator" "Administrator"}} <!-- Check if the user is a Moderator or Administrator -->
+            <a href="/dashboard?view={{.Session.Username}}" class="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            {{end}}
+
+            <a href="/logout" class="logout" onclick="return confirm('Are you sure you want to logout?')"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="/profile?name={{.Session.Username}}" class="profile"><i class="fas fa-user"></i> Profile</a>
+        {{else}}
+            <a href="/auth/login" class="login"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="/auth/register" class="register"><i class="fas fa-user-plus"></i> Register</a>
+        {{end}}
+    </header>
+
+    <!-- Display error message if there is an error -->
+    {{if .Session.HasError}}
+    <div class="overlay"></div>
+        <div class="error">
+            <form action="/reload" method="post">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Oops!</h2>
+                <p>{{.Session.Message}}</p>
+                <button type="submit" class="close-error">Close</button>
+            </form>
+        </div>
+    {{end}}
+
+    <!-- Dashboard container -->
+    <div class="dashboard-container">
+        <!-- Category management section for administrators -->
+        {{if eq .Session.Rank "Administrator"}}
+        <h1 class="dashboard-global"><i class="fas fa-list"></i> Categories</h1>
+        <div class="dashboard-settings">
+            <form action="/create-category" method="POST">
+                <input type="text" name="name" placeholder="Name" required maxlength="100">
+                <input type="text" name="description" placeholder="Description" required maxlength="1000">
+                <input type="text" name="global" placeholder="Global" required maxlength="1000">
+                <button type="submit">Create Category</button>
+            </form>
+
+            <form action="/delete-category" method="POST">
+                <select id="categories" name="categories">
+                    <option value="">Choose a category</option>
+                    {{range .Data.Categories}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                </select>
+
+                <button type="submit">Delete Category</button>
+            </form>
+        </div>
+        {{end}}
+
+        <!-- User management section -->
+        <h1 class="dashboard-global"><i class="fas fa-users"></i> Users</h1>
+        <div class="user-dropdown">
+            <label for="users">Select User:</label>
+            <select id="users" name="users" onchange="location = '/dashboard?view=' + this.value;">
+                <option value="">Choose a user</option>
+                {{range .Data.Users}}
+                <option value="{{.}}">{{.}}</option>
+                {{end}}
+            </select>
+        </div>
+    
+        <!-- User details section for moderators and administrators -->
+        {{if eq .Session.Rank "Moderator" "Administrator"}}
+            <div class="user-container">
+                {{if .Data}}
+                <div class="user-header">
+                    <img src="/img/profile/{{.Data.Profile.Picture}}" alt="{{.Data.Profile.Username}}" class="profile-picture">
+                    <h2 class="profile-username">{{.Data.Profile.Username}}</h2>
+                    <p class="profile-uuid">{{.Data.Profile.UUID}}</p>
+                </div>
+                <div class="user-info">
+                    <p class="user-role">{{.Data.Profile.Rank}}</p>
+                    <p class="user-joined">Joined: {{.Data.Profile.Timestamp}}</p>
+                    <div class="user-stats">
+                        <div>Total Posts: {{.Data.Profile.TotalPosts}}</div>
+                        <div>Total Comments: {{.Data.Profile.TotalComments}}</div>
+                        <div>Total Likes: {{.Data.Profile.TotalLikes}}</div>
+                        <div>Total Dislikes: {{.Data.Profile.TotalDislikes}}</div>
+                    </div>
+                    {{if eq .Session.Rank "Administrator"}}
+                    <div class="admin-menu">
+                        <form action="/promote" method="POST" onclick="return confirm('Are you sure you want to promote this user?')" class="admin-form">
+                            <input type="hidden" name="uuid" value="{{.Data.Profile.UUID}}">
+                            <button type="submit"><i class="fas fa-arrow-up"></i> Promote</button>
+                        </form>
+                        <form action="/demote" method="POST" onclick="return confirm('Are you sure you want to demote this user?')" class="admin-form">
+                            <input type="hidden" name="uuid" value="{{.Data.Profile.UUID}}">
+                            <button type="submit"><i class="fas fa-arrow-down"></i> Demote</button>
+                        </form>
+                        <form action="/delete" method="POST" onclick="return confirm('Are you sure you want to delete this user?')" class="admin-form">
+                            <input type="hidden" name="uuid" value="{{.Data.Profile.UUID}}">
+                            <button type="submit"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </form>
+                    </div>
+                    {{end}}
+                </div>
+            
+                <!-- User posts section -->
+                <div class="user-posts">
+                    <h3>Posts</h3>
+                    <ul>
+                        {{range .Data.Profile.Posts}}
+                            <li class="user-post">
+                                <a href="/categories/post/?name={{.Title}}&id={{.PostID}}" class="user-post-title">{{.Title}}</a>
+                                <div class="user-post-content">{{.Content}}</div>
+                                <div class="user-post-date">{{.Timestamp}}</div>
+                            </li>
+                        {{else}}
+                            <li class="no-user-posts">No posts found</li>
+                        {{end}}
+                    </ul>
+                </div>
+
+                <!-- User comments section -->
+                <div class="user-comments">
+                    <h3>Comments</h3>
+                    <ul>
+                        {{range .Data.Profile.Comments}}
+                            <li class="user-comment">
+                                <a href="/categories/post/?name={{.Title}}&id={{.PostID}}" class="user-comment-title">{{.Title}}</a>
+                                <div class="user-comment-content">{{.Content}}</div>
+                                <div class="user-comment-date">{{.Timestamp}}</div>
+                            </li>
+                        {{else}}
+                            <li class="no-user-comments">No comments found</li>
+                        {{end}}
+                    </ul>
+                </div>
+                {{else}}
+                <div class="no-user">No user found</div>
+                {{end}}
+            </div>
+        {{else}}
+            <script>
+                window.location.href = "/profile?name={{.Session.Username}}";
+            </script>
+        {{end}}
+    </div>
+
+    <script src="https://kit.fontawesome.com/0bcb48834b.js" crossorigin="anonymous"></script> <!-- FontAwesome kit for icons -->
+</body>
+</html>

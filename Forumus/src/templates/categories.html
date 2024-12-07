@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories > {{.Data.Name}}</title> <!-- Page title based on category name -->
+
+    <link rel="icon" type="image/png" href="/img/fix/favicon.png" />
+    <link rel="stylesheet" href="/styles/styles.css"> <!-- Link to external CSS -->
+</head>
+<body>
+    <!-- Header section with navigation links -->
+    <header class="header">
+        <div class="logo">
+            <a href="/back"><i class="fas fa-comments"></i> Prog'Here</a> <!-- Logo and home link -->
+        </div>
+    
+        {{if .Session.LoggedIn}} <!-- Check if the user is logged in -->
+            {{if eq .Session.Rank "Moderator" "Administrator"}} <!-- Check if the user is a Moderator or Administrator -->
+            <a href="/dashboard?view={{.Session.Username}}" class="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            {{end}}
+
+            <a href="/logout" class="logout" onclick="return confirm('Are you sure you want to logout?')"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="/profile?name={{.Session.Username}}" class="profile"><i class="fas fa-user"></i> Profile</a>
+        {{else}}
+            <a href="/auth/login" class="login"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="/auth/register" class="register"><i class="fas fa-user-plus"></i> Register</a>
+        {{end}}
+    </header>
+
+    <!-- Display error message if there is an error -->
+    {{if .Session.HasError}}
+    <div class="overlay"></div>
+        <div class="error">
+            <form action="/reload" method="post">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Oops!</h2>
+                <p>{{.Session.Message}}</p>
+                <button type="submit" class="close-error">Close</button>
+            </form>
+        </div>
+    {{end}}
+
+    <!-- Categories container -->
+    <div class="categories-container">
+        <!-- Breadcrumb navigation -->
+        <div class="categories-tableau">
+            <div class="category-header"><i class="fas fa-list"></i><a href="/"> Topics</a> <i class="fas fa-arrow-right"></i><a href="/categories/?id={{.Data.CategoryID}}"> {{.Data.Name}}</a></div>
+        </div>
+
+        {{if .Session.LoggedIn}}
+        <!-- Form to create a new post -->
+        <h3 class="category-global">Create Post</h3>
+            <div class="new-post">
+                <form action="/create-post" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="category_id" value="{{.Data.CategoryID}}">
+                    <input type="text" name="title" placeholder="Title" required maxlength="100">
+                    <textarea id="content" name="content" placeholder="Content" required maxlength="1000"></textarea>
+
+                    <!-- Text styling buttons for the content textarea -->
+                    <div class="text-styling-buttons">
+                        <button type="button" onclick="formatText('bold')"><b>B</b></button>
+                        <button type="button" onclick="formatText('italic')"><i>I</i></button>
+                        <button type="button" onclick="formatText('underline')"><u>U</u></button>
+                        <button type="button" onclick="formatText('strikeThrough')"><s>S</s></button>
+                        <button type="button" onclick="formatText('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                    </div>
+
+                    <input type="file" name="image" multiple="multiple" accept="image/*">
+                    <button type="submit">Create Post</button>
+                </form>
+            </div>
+        {{end}}
+
+        <!-- Posts container -->
+        <div class="posts-container">
+            <h3 class="category-global">Posts</h3>
+            <div class="posts-tableau">
+                {{range .Data.Posts}} <!-- Loop through each post in the category -->
+                    <div class="post">
+                        <a href="/categories/post?name={{.Title}}&id={{.PostID}}" class="post-title">{{.Title}}</a>
+                        <div class="post-content">{{.Content}}</div>
+                        <div class="post-date">{{.Timestamp}}</div>
+                        <div class="post-author"><a href="/profile?name={{.Username}}">{{.Username}}</a></div>
+                    </div>
+                {{else}}
+                    <p>No post available.</p> <!-- Message if no posts are available -->
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for text formatting and FontAwesome icons -->
+    <script>
+        function formatText(command) {
+            var textarea = document.getElementById('content');
+            var start = textarea.selectionStart;
+            var end = textarea.selectionEnd;
+            var selectedText = textarea.value.substring(start, end);
+            var replacement = '';
+
+            if (command === 'bold') {
+                replacement = '<b>' + selectedText + '</b>';
+            } else if (command === 'italic') {
+                replacement = '<i>' + selectedText + '</i>';
+            } else if (command === 'underline') {
+                replacement = '<u>' + selectedText + '</u>';
+            } else if (command === 'strikeThrough') {
+                replacement = '<s>' + selectedText + '</s>';
+            } else if (command === 'insertOrderedList') {
+                replacement = '<ol>\n<li>' + selectedText.split('\n').join('</li>\n<li>') + '</li>\n</ol>';
+            }
+
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            textarea.setSelectionRange(start, start + replacement.length);
+        }
+    </script>
+
+    <script src="https://kit.fontawesome.com/0bcb48834b.js" crossorigin="anonymous"></script> <!-- FontAwesome kit for icons -->
+</body>
+</html>
